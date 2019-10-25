@@ -1,0 +1,8 @@
+---
+title: "Ds202_project proposal"
+author: "Sijie Huang, Hanying Shen, Elcy Timothy, Yealim Sung, Yu Hong"
+date: "October 25, 2019"
+output: html_document
+---
+
+##
