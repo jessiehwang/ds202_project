@@ -5,4 +5,32 @@ date: "October 25, 2019"
 output: html_document
 ---
 
-##
+## Names of team members: Yealim Sung, Elcy Timothy, Hanying Shen, Yu Hong
+
+## Project coordinator: Sijie Huang
+
+## The link to the data source
+
+https://www.kaggle.com/heesoo37/120-years-of-olympic-history-athletes-and-results
+
+
+## An overview of the dataset
+
+This is a historical dataset on the modern Olympic Games,120 years worth of data on summer and winter Olympics including the name, gender, age, height, weight etc of the athletes.
+
+
+## Introduce some background
+
+Since the next summer Olympics is coming up soon, we thought it would be interesting to look into previous records and data to possibly predict which Country would win the most medals in 2020. We then could look at which sports win the most medals as well.
+
+
+## What questions can be answered from the dataset and how do you plan to answer those questions?
+
+With this data set, there are so many possible predictions and analysis that we could make since there are 120 years worth of data and multiple types of sports. By using this dataset, first we would have to clean the data so that we would only have summer game results. After exploring the data, we came up with a few ideas.
+
+Firstly, we would like to predict which country will win the most medals in 2020. We will do this by looking at the countries that have won the most medals in the past. To go further we can look at the medals that each country has the most of, Gold, Silver, or Bronze. We are also interested in country participation over time and the historical implications of why some countries participated or did not. 
+
+Secondly, we would like to see the athlete’s height and weight change over time and how that affects the results. This could be done by simply analyzing the dataset of 120 years.
+
+Thirdly, we would like to see the progression of Women involved in the Olympics over time. We would do this by seeing the change in height and weight over time, the number of medals over time, and the proportion of women on Olympic teams.
+
