@@ -394,6 +394,172 @@ summary {
 <p>Firstly, we would like to predict which country will win the most medals in 2020. We will do this by looking at the countries that have won the most medals in the past. To go further we can look at the medals that each country has the most of, Gold, Silver, or Bronze. We are also interested in country participation over time and the historical implications of why some countries participated or did not.</p>
 <p>Secondly, we would like to see the athlete’s height and weight change over time and how that affects the results. This could be done by simply analyzing the dataset of 120 years.</p>
 <p>Thirdly, we would like to see the progression of Women involved in the Olympics over time. We would do this by seeing the change in height and weight over time, the number of medals over time, and the proportion of women on Olympic teams.</p>
+<pre class="r"><code>library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: 'dplyr'</code></pre>
+<pre><code>## The following objects are masked from 'package:stats':
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>data &lt;- read.csv(file=&quot;athlete_events.csv&quot;, header=TRUE, sep=&quot;,&quot;)
+noc &lt;- read.csv(file=&quot;noc_regions.csv&quot;, header=TRUE)</code></pre>
+<pre class="r"><code>sum(is.na(data))</code></pre>
+<pre><code>## [1] 363853</code></pre>
+<pre class="r"><code>sum(is.na(data$Height))</code></pre>
+<pre><code>## [1] 60171</code></pre>
+<pre class="r"><code>sum(is.na(data$Weight))</code></pre>
+<pre><code>## [1] 62875</code></pre>
+<pre class="r"><code>sapply(data, class)</code></pre>
+<pre><code>##        ID      Name       Sex       Age    Height    Weight      Team 
+## &quot;integer&quot;  &quot;factor&quot;  &quot;factor&quot; &quot;integer&quot; &quot;integer&quot; &quot;numeric&quot;  &quot;factor&quot; 
+##       NOC     Games      Year    Season      City     Sport     Event 
+##  &quot;factor&quot;  &quot;factor&quot; &quot;integer&quot;  &quot;factor&quot;  &quot;factor&quot;  &quot;factor&quot;  &quot;factor&quot; 
+##     Medal 
+##  &quot;factor&quot;</code></pre>
+<pre class="r"><code>#change the na of &quot;Medal&quot; to &quot;DNW&quot; (Did Not Win)
+data$Medal &lt;- as.character(data$Medal)
+data$Medal[is.na(data$Medal)]&lt;- &quot;DNW&quot;
+data$Medal &lt;- as.factor(data$Medal)</code></pre>
+<pre class="r"><code>#omit rows where either &quot;Height&quot; or &quot;Weight&quot; have missing values and save the new data
+data&lt;-na.omit(data, cols=c(&quot;Height&quot;, &quot;Weight&quot;))
+sum(is.na(data))</code></pre>
+<pre><code>## [1] 0</code></pre>
+<pre class="r"><code># list the structure of data
+str(data)</code></pre>
+<pre><code>## 'data.frame':    206165 obs. of  15 variables:
+##  $ ID    : int  1 2 5 5 5 5 5 5 6 6 ...
+##  $ Name  : Factor w/ 134732 levels &quot;  Gabrielle Marie \&quot;Gabby\&quot; Adcock (White-)&quot;,..: 8 9 21469 21469 21469 21469 21469 21469 100347 100347 ...
+##  $ Sex   : Factor w/ 2 levels &quot;F&quot;,&quot;M&quot;: 2 2 1 1 1 1 1 1 2 2 ...
+##  $ Age   : int  24 23 21 21 25 25 27 27 31 31 ...
+##  $ Height: int  180 170 185 185 185 185 185 185 188 188 ...
+##  $ Weight: num  80 60 82 82 82 82 82 82 75 75 ...
+##  $ Team  : Factor w/ 1184 levels &quot;30. Februar&quot;,..: 199 199 705 705 705 705 705 705 1096 1096 ...
+##  $ NOC   : Factor w/ 230 levels &quot;AFG&quot;,&quot;AHO&quot;,&quot;ALB&quot;,..: 42 42 146 146 146 146 146 146 217 217 ...
+##  $ Games : Factor w/ 51 levels &quot;1896 Summer&quot;,..: 38 49 37 37 39 39 40 40 39 39 ...
+##  $ Year  : int  1992 2012 1988 1988 1992 1992 1994 1994 1992 1992 ...
+##  $ Season: Factor w/ 2 levels &quot;Summer&quot;,&quot;Winter&quot;: 1 1 2 2 2 2 2 2 2 2 ...
+##  $ City  : Factor w/ 42 levels &quot;Albertville&quot;,..: 6 18 9 9 1 1 17 17 1 1 ...
+##  $ Sport : Factor w/ 66 levels &quot;Aeronautics&quot;,..: 9 33 54 54 54 54 54 54 18 18 ...
+##  $ Event : Factor w/ 765 levels &quot;Aeronautics Mixed Aeronautics&quot;,..: 160 398 623 619 623 619 623 619 228 236 ...
+##  $ Medal : Factor w/ 4 levels &quot;Bronze&quot;,&quot;DNW&quot;,..: 2 2 2 2 2 2 2 2 2 2 ...
+##  - attr(*, &quot;na.action&quot;)=Class 'omit'  Named int [1:64951] 3 4 27 28 30 36 37 38 39 40 ...
+##   .. ..- attr(*, &quot;names&quot;)= chr [1:64951] &quot;3&quot; &quot;4&quot; &quot;27&quot; &quot;28&quot; ...</code></pre>
+<pre class="r"><code>#Merge two datasets as &quot;olympics&quot;, so we can use the NOC code as the primary key
+olympics&lt;-inner_join(data, noc, by=&quot;NOC&quot;)</code></pre>
+<pre><code>## Warning: Column `NOC` joining factors with different levels, coercing to
+## character vector</code></pre>
+<pre class="r"><code>#replace &quot;Team&quot; with &quot;Country&quot; and remove the missing values because there are too many duplicates with small differences typos in the original &quot;team&quot; colunm
+olympics&lt;-select(olympics, -c(&quot;Team&quot;))
+colnames(olympics)[colnames(olympics)==&quot;region&quot;] &lt;- &quot;Country&quot;
+olympics&lt;-na.omit(olympics, cols=c(&quot;Country&quot;))
+
+# list levels of factor Country in data
+levels(olympics$Country)</code></pre>
+<pre><code>##   [1] &quot;Afghanistan&quot;                      &quot;Albania&quot;                         
+##   [3] &quot;Algeria&quot;                          &quot;American Samoa&quot;                  
+##   [5] &quot;Andorra&quot;                          &quot;Angola&quot;                          
+##   [7] &quot;Antigua&quot;                          &quot;Argentina&quot;                       
+##   [9] &quot;Armenia&quot;                          &quot;Aruba&quot;                           
+##  [11] &quot;Australia&quot;                        &quot;Austria&quot;                         
+##  [13] &quot;Azerbaijan&quot;                       &quot;Bahamas&quot;                         
+##  [15] &quot;Bahrain&quot;                          &quot;Bangladesh&quot;                      
+##  [17] &quot;Barbados&quot;                         &quot;Belarus&quot;                         
+##  [19] &quot;Belgium&quot;                          &quot;Belize&quot;                          
+##  [21] &quot;Benin&quot;                            &quot;Bermuda&quot;                         
+##  [23] &quot;Bhutan&quot;                           &quot;Boliva&quot;                          
+##  [25] &quot;Bosnia and Herzegovina&quot;           &quot;Botswana&quot;                        
+##  [27] &quot;Brazil&quot;                           &quot;Brunei&quot;                          
+##  [29] &quot;Bulgaria&quot;                         &quot;Burkina Faso&quot;                    
+##  [31] &quot;Burundi&quot;                          &quot;Cambodia&quot;                        
+##  [33] &quot;Cameroon&quot;                         &quot;Canada&quot;                          
+##  [35] &quot;Cape Verde&quot;                       &quot;Cayman Islands&quot;                  
+##  [37] &quot;Central African Republic&quot;         &quot;Chad&quot;                            
+##  [39] &quot;Chile&quot;                            &quot;China&quot;                           
+##  [41] &quot;Colombia&quot;                         &quot;Comoros&quot;                         
+##  [43] &quot;Cook Islands&quot;                     &quot;Costa Rica&quot;                      
+##  [45] &quot;Croatia&quot;                          &quot;Cuba&quot;                            
+##  [47] &quot;Curacao&quot;                          &quot;Cyprus&quot;                          
+##  [49] &quot;Czech Republic&quot;                   &quot;Democratic Republic of the Congo&quot;
+##  [51] &quot;Denmark&quot;                          &quot;Djibouti&quot;                        
+##  [53] &quot;Dominica&quot;                         &quot;Dominican Republic&quot;              
+##  [55] &quot;Ecuador&quot;                          &quot;Egypt&quot;                           
+##  [57] &quot;El Salvador&quot;                      &quot;Equatorial Guinea&quot;               
+##  [59] &quot;Eritrea&quot;                          &quot;Estonia&quot;                         
+##  [61] &quot;Ethiopia&quot;                         &quot;Fiji&quot;                            
+##  [63] &quot;Finland&quot;                          &quot;France&quot;                          
+##  [65] &quot;Gabon&quot;                            &quot;Gambia&quot;                          
+##  [67] &quot;Georgia&quot;                          &quot;Germany&quot;                         
+##  [69] &quot;Ghana&quot;                            &quot;Greece&quot;                          
+##  [71] &quot;Grenada&quot;                          &quot;Guam&quot;                            
+##  [73] &quot;Guatemala&quot;                        &quot;Guinea&quot;                          
+##  [75] &quot;Guinea-Bissau&quot;                    &quot;Guyana&quot;                          
+##  [77] &quot;Haiti&quot;                            &quot;Honduras&quot;                        
+##  [79] &quot;Hungary&quot;                          &quot;Iceland&quot;                         
+##  [81] &quot;India&quot;                            &quot;Individual Olympic Athletes&quot;     
+##  [83] &quot;Indonesia&quot;                        &quot;Iran&quot;                            
+##  [85] &quot;Iraq&quot;                             &quot;Ireland&quot;                         
+##  [87] &quot;Israel&quot;                           &quot;Italy&quot;                           
+##  [89] &quot;Ivory Coast&quot;                      &quot;Jamaica&quot;                         
+##  [91] &quot;Japan&quot;                            &quot;Jordan&quot;                          
+##  [93] &quot;Kazakhstan&quot;                       &quot;Kenya&quot;                           
+##  [95] &quot;Kiribati&quot;                         &quot;Kosovo&quot;                          
+##  [97] &quot;Kuwait&quot;                           &quot;Kyrgyzstan&quot;                      
+##  [99] &quot;Laos&quot;                             &quot;Latvia&quot;                          
+## [101] &quot;Lebanon&quot;                          &quot;Lesotho&quot;                         
+## [103] &quot;Liberia&quot;                          &quot;Libya&quot;                           
+## [105] &quot;Liechtenstein&quot;                    &quot;Lithuania&quot;                       
+## [107] &quot;Luxembourg&quot;                       &quot;Macedonia&quot;                       
+## [109] &quot;Madagascar&quot;                       &quot;Malawi&quot;                          
+## [111] &quot;Malaysia&quot;                         &quot;Maldives&quot;                        
+## [113] &quot;Mali&quot;                             &quot;Malta&quot;                           
+## [115] &quot;Marshall Islands&quot;                 &quot;Mauritania&quot;                      
+## [117] &quot;Mauritius&quot;                        &quot;Mexico&quot;                          
+## [119] &quot;Micronesia&quot;                       &quot;Moldova&quot;                         
+## [121] &quot;Monaco&quot;                           &quot;Mongolia&quot;                        
+## [123] &quot;Montenegro&quot;                       &quot;Morocco&quot;                         
+## [125] &quot;Mozambique&quot;                       &quot;Myanmar&quot;                         
+## [127] &quot;Namibia&quot;                          &quot;Nauru&quot;                           
+## [129] &quot;Nepal&quot;                            &quot;Netherlands&quot;                     
+## [131] &quot;New Zealand&quot;                      &quot;Nicaragua&quot;                       
+## [133] &quot;Niger&quot;                            &quot;Nigeria&quot;                         
+## [135] &quot;North Korea&quot;                      &quot;Norway&quot;                          
+## [137] &quot;Oman&quot;                             &quot;Pakistan&quot;                        
+## [139] &quot;Palau&quot;                            &quot;Palestine&quot;                       
+## [141] &quot;Panama&quot;                           &quot;Papua New Guinea&quot;                
+## [143] &quot;Paraguay&quot;                         &quot;Peru&quot;                            
+## [145] &quot;Philippines&quot;                      &quot;Poland&quot;                          
+## [147] &quot;Portugal&quot;                         &quot;Puerto Rico&quot;                     
+## [149] &quot;Qatar&quot;                            &quot;Republic of Congo&quot;               
+## [151] &quot;Romania&quot;                          &quot;Russia&quot;                          
+## [153] &quot;Rwanda&quot;                           &quot;Saint Kitts&quot;                     
+## [155] &quot;Saint Lucia&quot;                      &quot;Saint Vincent&quot;                   
+## [157] &quot;Samoa&quot;                            &quot;San Marino&quot;                      
+## [159] &quot;Sao Tome and Principe&quot;            &quot;Saudi Arabia&quot;                    
+## [161] &quot;Senegal&quot;                          &quot;Serbia&quot;                          
+## [163] &quot;Seychelles&quot;                       &quot;Sierra Leone&quot;                    
+## [165] &quot;Singapore&quot;                        &quot;Slovakia&quot;                        
+## [167] &quot;Slovenia&quot;                         &quot;Solomon Islands&quot;                 
+## [169] &quot;Somalia&quot;                          &quot;South Africa&quot;                    
+## [171] &quot;South Korea&quot;                      &quot;South Sudan&quot;                     
+## [173] &quot;Spain&quot;                            &quot;Sri Lanka&quot;                       
+## [175] &quot;Sudan&quot;                            &quot;Suriname&quot;                        
+## [177] &quot;Swaziland&quot;                        &quot;Sweden&quot;                          
+## [179] &quot;Switzerland&quot;                      &quot;Syria&quot;                           
+## [181] &quot;Taiwan&quot;                           &quot;Tajikistan&quot;                      
+## [183] &quot;Tanzania&quot;                         &quot;Thailand&quot;                        
+## [185] &quot;Timor-Leste&quot;                      &quot;Togo&quot;                            
+## [187] &quot;Tonga&quot;                            &quot;Trinidad&quot;                        
+## [189] &quot;Tunisia&quot;                          &quot;Turkey&quot;                          
+## [191] &quot;Turkmenistan&quot;                     &quot;Uganda&quot;                          
+## [193] &quot;UK&quot;                               &quot;Ukraine&quot;                         
+## [195] &quot;United Arab Emirates&quot;             &quot;Uruguay&quot;                         
+## [197] &quot;USA&quot;                              &quot;Uzbekistan&quot;                      
+## [199] &quot;Vanuatu&quot;                          &quot;Venezuela&quot;                       
+## [201] &quot;Vietnam&quot;                          &quot;Virgin Islands, British&quot;         
+## [203] &quot;Virgin Islands, US&quot;               &quot;Yemen&quot;                           
+## [205] &quot;Zambia&quot;                           &quot;Zimbabwe&quot;</code></pre>
 </div>
 
 

@@ -34,3 +34,53 @@ Secondly, we would like to see the athlete’s height and weight change over tim
 
 Thirdly, we would like to see the progression of Women involved in the Olympics over time. We would do this by seeing the change in height and weight over time, the number of medals over time, and the proportion of women on Olympic teams.
 
+```{r}
+
+library(dplyr)
+
+
+data <- read.csv(file="athlete_events.csv", header=TRUE, sep=",")
+noc <- read.csv(file="noc_regions.csv", header=TRUE)
+```
+
+```{r}
+sum(is.na(data))
+sum(is.na(data$Height))
+sum(is.na(data$Weight))
+
+sapply(data, class)
+
+```
+
+```{r}
+#change the na of "Medal" to "DNW" (Did Not Win)
+data$Medal <- as.character(data$Medal)
+data$Medal[is.na(data$Medal)]<- "DNW"
+data$Medal <- as.factor(data$Medal)
+```
+
+```{r}
+#omit rows where either "Height" or "Weight" have missing values and save the new data
+data<-na.omit(data, cols=c("Height", "Weight"))
+sum(is.na(data))
+# list the structure of data
+str(data)
+```
+
+```{r}
+#Merge two datasets as "olympics", so we can use the NOC code as the primary key
+olympics<-inner_join(data, noc, by="NOC")
+
+#replace "Team" with "Country" and remove the missing values because there are too many duplicates with small differences typos in the original "team" colunm
+olympics<-select(olympics, -c("Team"))
+colnames(olympics)[colnames(olympics)=="region"] <- "Country"
+olympics<-na.omit(olympics, cols=c("Country"))
+
+# list levels of factor Country in data
+levels(olympics$Country)
+```
+
+
+
+
+
