@@ -168,6 +168,8 @@ ggplot(am,aes(x=total,y=total1))+
 
 ```
 
-
+```{R}
+top=attend%>%filter(region %in% c("USA","Russia","Germany","Australia","UK"))
+```
 
 
