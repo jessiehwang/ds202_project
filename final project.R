@@ -315,3 +315,58 @@ ggplot(world, aes(x = long, y = lat, group = group)) +
         plot.title = element_text(hjust = 0.5)) +
   guides(fill=guide_colourbar(title="Athletes")) +
   scale_fill_gradient(low="steelblue",high = "orange")
+##
+##
+##
+###model
+#linear regression
+#install.packages('dummies')
+#library('dummies')
+
+df<-olympics%>%select(Age,Height,Weight,Year,Medal,Sex,Season)
+df$Medal<-as.character(df$Medal)
+df$Medal[is.na(df$Medal)]<- 0
+df$Medal[df$Medal=="Gold"]<-1
+df$Medal[df$Medal=="Silver"]<-1
+df$Medal[df$Medal=="Bronze"]<-1
+df$Medal<-as.numeric(df$Medal)
+df$Sex<-as.character(df$Sex)
+df$Season<-as.character(df$Season)
+df$Season[df$Season=="Summer"]<-1
+df$Season[df$Season=="Winter"]<-0
+df$Sex[df$Sex=="M"]<-1
+df$Sex[df$Sex=="F"]<-0
+df$Sex<-as.numeric(df$Sex)
+df$Season<-as.numeric(df$Season)
+sapply(df,class)
+na.omit(df)
+head(df)
+df$Medal<-as.numeric((df$Medal))
+p<-lm(Medal~Age+Height+Weight+Year+Sex+Season,data=df)
+summary(p)
+plot(p)
+
+#knn
+library("class")
+library("MASS")
+set.seed(123)
+n = nrow(df)
+n_train = floor(n/2)
+index_train <- sample(1:n,n_train,replace=FALSE)
+train= df[1:index_train[3],]
+test= df[index_train[3]:nrow(df),]
+model=lda(Medal~Age+Height+Weight+Year+Sex+Season,data=df)
+predict=predict(model, train)
+#
+knn.pred=knn(test,train,cl=test$Age,k=5)
+table<-table(knn.pred,train$Age)
+table
+acc4= sum(diag(table))/sum(table)
+1-acc4
+#
+fit=glm(Medal~Age+Height+Weight+Year+Sex+Season,family=binomial,data=df)
+predict1<-predict.glm(fit,train,type="response")
+ta<-table(predict1,train$indicator)
+ta
+acc5=sum(diag(ta))/sum(ta)
+1-acc5
