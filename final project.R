@@ -81,7 +81,7 @@ ggplot(medals,aes(region,total,color=region,fill=region)) +
   ggtitle("Top medal winners by Country", subtitle= "Summer Olympics 1896 to 2016") 
 
 #Top medal get in 2016 Summer
-Y <- olympics%>%filter(!is.na(Medal),Season=='Summer')
+Y <- olympics%>%filter(!is.na(Medal),Season=='Summer', Sex=="F")
 Y$notes = NULL
 Y2016 =Y%>%filter(Year==2016)%>%group_by(region,Medal)%>%summarize(total=n())%>%arrange(desc(total))
 Y2016 =spread(Y2016,Medal,total)
@@ -346,27 +346,4 @@ p<-lm(Medal~Age+Height+Weight+Year+Sex+Season,data=df)
 summary(p)
 plot(p)
 
-#knn
-library("class")
-library("MASS")
-set.seed(123)
-n = nrow(df)
-n_train = floor(n/2)
-index_train <- sample(1:n,n_train,replace=FALSE)
-train= df[1:index_train[3],]
-test= df[index_train[3]:nrow(df),]
-model=lda(Medal~Age+Height+Weight+Year+Sex+Season,data=df)
-predict=predict(model, train)
-#
-knn.pred=knn(test,train,cl=test$Age,k=5)
-table<-table(knn.pred,train$Age)
-table
-acc4= sum(diag(table))/sum(table)
-1-acc4
-#
-fit=glm(Medal~Age+Height+Weight+Year+Sex+Season,family=binomial,data=df)
-predict1<-predict.glm(fit,train,type="response")
-ta<-table(predict1,train$indicator)
-ta
-acc5=sum(diag(ta))/sum(ta)
-1-acc5
+
