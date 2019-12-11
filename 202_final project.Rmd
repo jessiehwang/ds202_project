@@ -83,6 +83,31 @@ ggplot(plot, aes(x=Year, y=Count, group=Sex)) +
   scale_x_continuous(breaks=plot$Year)+
   theme(legend.position="top", legend.text=element_text(size=5),axis.text.x=element_text(size=8, angle=90,vjust=0,hjust=1))+
   labs(title="Sex ratio over the time", x="Years", y="Num. Participants")
+
+Y <- olympics%>%filter(!is.na(Medal),Season=='Summer', Sex=="F")
+Y$notes = NULL
+Y2016 =Y%>%filter(Year==2016)%>%group_by(region,Medal)%>%summarize(total=n())%>%arrange(desc(total))
+Y2016 =spread(Y2016,Medal,total)
+Y2016$Tm <- rowSums(Y2016[, c(2, 3, 4)])
+Y2016 <-Y2016%>%arrange(desc(Tm))%>%head(n=35)
+Y2016g <- gather(Y2016,Medal, Total,2:4)
+
+Y2016g$region <- factor(Y2016$region,levels = Y2016$region[order(Y2016$Tm)])
+
+ggplot(Y2016g,aes(region,Total,color=region,fill=region)) +
+  geom_bar(position = "stack",  width =.6,stat="identity") +
+  coord_flip()+
+  facet_wrap(~Medal)+
+  geom_text(aes(label=Total,hjust=-.03,  colour="black"),size=3)+
+  
+  theme(axis.line = element_line(color = "orange",size=1))+
+  theme(panel.background=element_blank())+ 
+  scale_x_discrete() +
+  xlab("Team")+ylab("Medals")+
+  theme(legend.position = "none",
+        axis.text = element_text(size = 8,face="bold"),
+        plot.title = element_text(size=16,face = "bold")) + 
+  ggtitle("Top Team medal winners ", subtitle = "Summer Olympics 2016")
 ```
 
 
