@@ -74,6 +74,18 @@ ggplot(season, aes(x=Year, y=total,color=Sex))+
 #in numbers  from 2000 in 1980 games to 6000 athletes in 2016 games.
 ```
 
+## Sex
+```{R}
+#sex
+plot <-olympics%>% group_by(Year, Sex) %>% filter(Season=='Summer') %>% summarize(Count=n()) %>% group_by(Year)
+ggplot(plot, aes(x=Year, y=Count, group=Sex)) +
+  geom_col(aes(fill=Sex)) +
+  scale_x_continuous(breaks=plot$Year)+
+  theme(legend.position="top", legend.text=element_text(size=5),axis.text.x=element_text(size=8, angle=90,vjust=0,hjust=1))+
+  labs(title="Sex ratio over the time", x="Years", y="Num. Participants")
+```
+
+
 ##Weight,Height and Age
 ```{R}
 #There are no relationship between weight,Height,Age and win the medal
@@ -168,8 +180,10 @@ ggplot(am,aes(x=total,y=total1))+
 
 ```
 
+##sport
 ```{R}
 top=attend%>%filter(region %in% c("USA","Russia","Germany","Australia","UK"))
+
 ```
 
 
