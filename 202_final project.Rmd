@@ -170,6 +170,14 @@ ggplot(am,aes(x=total,y=total1))+
 
 ```{R}
 top=attend%>%filter(region %in% c("USA","Russia","Germany","Australia","UK"))
+top$sport<-as.character(top$Sport)
+top$region<-as.character(top$region)
+top <- subset(top, Medal == "Gold")
+top =top%>%group_by(region, Sport)%>%summarize(total1=n())%>%arrange(desc(total1))%>%head(n=30)
+ggplot(top, aes(Sport, total1),color=sport,fill=sport) + geom_bar(position = "stack",  width =.6,stat="identity") +
+  coord_flip() + scale_x_discrete() + facet_wrap(~region) + geom_text(aes(label=total1,hjust=-.03,  colour="black"),size=2) + theme(legend.position = "none",
+        axis.text = element_text(size = 6,face="bold"),
+        plot.title = element_text(size=16,face = "bold"))+labs(title="Best sports for top 5 Countries", x="Sports", y="Number of Gold Medals")
 ```
 
 
