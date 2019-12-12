@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
@@ -332,6 +331,7 @@ summary {
   border: none;
   display: inline-block;
   border-radius: 4px;
+  background-color: transparent;
 }
 
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li {
@@ -396,11 +396,11 @@ summary {
 <p>Thirdly, we would like to see the progression of Women involved in the Olympics over time. We would do this by seeing the change in height and weight over time, the number of medals over time, and the proportion of women on Olympic teams.</p>
 <pre class="r"><code>library(dplyr)</code></pre>
 <pre><code>## 
-## Attaching package: 'dplyr'</code></pre>
-<pre><code>## The following objects are masked from 'package:stats':
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
 ## 
 ##     filter, lag</code></pre>
-<pre><code>## The following objects are masked from 'package:base':
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
 ## 
 ##     intersect, setdiff, setequal, union</code></pre>
 <pre class="r"><code>data &lt;- read.csv(file=&quot;athlete_events.csv&quot;, header=TRUE, sep=&quot;,&quot;)
@@ -412,12 +412,10 @@ noc &lt;- read.csv(file=&quot;noc_regions.csv&quot;, header=TRUE)</code></pre>
 <pre class="r"><code>sum(is.na(data$Weight))</code></pre>
 <pre><code>## [1] 62875</code></pre>
 <pre class="r"><code>sapply(data, class)</code></pre>
-<pre><code>##        ID      Name       Sex       Age    Height    Weight      Team 
-## &quot;integer&quot;  &quot;factor&quot;  &quot;factor&quot; &quot;integer&quot; &quot;integer&quot; &quot;numeric&quot;  &quot;factor&quot; 
-##       NOC     Games      Year    Season      City     Sport     Event 
-##  &quot;factor&quot;  &quot;factor&quot; &quot;integer&quot;  &quot;factor&quot;  &quot;factor&quot;  &quot;factor&quot;  &quot;factor&quot; 
-##     Medal 
-##  &quot;factor&quot;</code></pre>
+<pre><code>##        ID      Name       Sex       Age    Height    Weight      Team       NOC 
+## &quot;integer&quot;  &quot;factor&quot;  &quot;factor&quot; &quot;integer&quot; &quot;integer&quot; &quot;numeric&quot;  &quot;factor&quot;  &quot;factor&quot; 
+##     Games      Year    Season      City     Sport     Event     Medal 
+##  &quot;factor&quot; &quot;integer&quot;  &quot;factor&quot;  &quot;factor&quot;  &quot;factor&quot;  &quot;factor&quot;  &quot;factor&quot;</code></pre>
 <pre class="r"><code>#change the missing values of &quot;Medal&quot; to &quot;DNW&quot; (Did Not Win)
 data$Medal &lt;- as.character(data$Medal)
 data$Medal[is.na(data$Medal)]&lt;- &quot;DNW&quot;
@@ -440,7 +438,7 @@ sum(is.na(data))</code></pre>
 <pre><code>## [1] 0</code></pre>
 <pre class="r"><code># list the structure of data
 str(data)</code></pre>
-<pre><code>## 'data.frame':    206165 obs. of  15 variables:
+<pre><code>## &#39;data.frame&#39;:    206165 obs. of  15 variables:
 ##  $ ID    : chr  &quot;1&quot; &quot;2&quot; &quot;5&quot; &quot;5&quot; ...
 ##  $ Name  : chr  &quot;A Dijiang&quot; &quot;A Lamusi&quot; &quot;Christine Jacoba Aaftink&quot; &quot;Christine Jacoba Aaftink&quot; ...
 ##  $ Sex   : Factor w/ 2 levels &quot;M&quot;,&quot;F&quot;: 1 1 2 2 2 2 2 2 1 1 ...
@@ -454,10 +452,10 @@ str(data)</code></pre>
 ##  $ Season: Factor w/ 2 levels &quot;Summer&quot;,&quot;Winter&quot;: 1 1 2 2 2 2 2 2 2 2 ...
 ##  $ City  : Factor w/ 42 levels &quot;Albertville&quot;,..: 6 18 9 9 1 1 17 17 1 1 ...
 ##  $ Sport : Factor w/ 66 levels &quot;Aeronautics&quot;,..: 9 33 54 54 54 54 54 54 18 18 ...
-##  $ Event : chr  &quot;Basketball Men's Basketball&quot; &quot;Judo Men's Extra-Lightweight&quot; &quot;Speed Skating Women's 500 metres&quot; &quot;Speed Skating Women's 1,000 metres&quot; ...
+##  $ Event : chr  &quot;Basketball Men&#39;s Basketball&quot; &quot;Judo Men&#39;s Extra-Lightweight&quot; &quot;Speed Skating Women&#39;s 500 metres&quot; &quot;Speed Skating Women&#39;s 1,000 metres&quot; ...
 ##  $ Medal : Factor w/ 4 levels &quot;Bronze&quot;,&quot;DNW&quot;,..: 2 2 2 2 2 2 2 2 2 2 ...
-##  - attr(*, &quot;na.action&quot;)=Class 'omit'  Named int [1:64951] 3 4 27 28 30 36 37 38 39 40 ...
-##   .. ..- attr(*, &quot;names&quot;)= chr [1:64951] &quot;3&quot; &quot;4&quot; &quot;27&quot; &quot;28&quot; ...</code></pre>
+##  - attr(*, &quot;na.action&quot;)= &#39;omit&#39; Named int  3 4 27 28 30 36 37 38 39 40 ...
+##   ..- attr(*, &quot;names&quot;)= chr  &quot;3&quot; &quot;4&quot; &quot;27&quot; &quot;28&quot; ...</code></pre>
 <pre class="r"><code>#Merge two datasets as &quot;olympics&quot;, so we can use the NOC code as the primary key
 olympics&lt;-inner_join(data, noc, by=&quot;NOC&quot;)%&gt;%filter(!is.na(region))
 
@@ -573,7 +571,7 @@ levels(olympics$Country)</code></pre>
 ## [203] &quot;Virgin Islands, US&quot;               &quot;Yemen&quot;                           
 ## [205] &quot;Zambia&quot;                           &quot;Zimbabwe&quot;</code></pre>
 <pre class="r"><code>str(olympics)</code></pre>
-<pre><code>## 'data.frame':    205895 obs. of  16 variables:
+<pre><code>## &#39;data.frame&#39;:    205895 obs. of  16 variables:
 ##  $ ID     : chr  &quot;1&quot; &quot;2&quot; &quot;5&quot; &quot;5&quot; ...
 ##  $ Name   : chr  &quot;A Dijiang&quot; &quot;A Lamusi&quot; &quot;Christine Jacoba Aaftink&quot; &quot;Christine Jacoba Aaftink&quot; ...
 ##  $ Sex    : Factor w/ 2 levels &quot;M&quot;,&quot;F&quot;: 1 1 2 2 2 2 2 2 1 1 ...
@@ -586,7 +584,7 @@ levels(olympics$Country)</code></pre>
 ##  $ Season : Factor w/ 2 levels &quot;Summer&quot;,&quot;Winter&quot;: 1 1 2 2 2 2 2 2 2 2 ...
 ##  $ City   : Factor w/ 42 levels &quot;Albertville&quot;,..: 6 18 9 9 1 1 17 17 1 1 ...
 ##  $ Sport  : Factor w/ 66 levels &quot;Aeronautics&quot;,..: 9 33 54 54 54 54 54 54 18 18 ...
-##  $ Event  : chr  &quot;Basketball Men's Basketball&quot; &quot;Judo Men's Extra-Lightweight&quot; &quot;Speed Skating Women's 500 metres&quot; &quot;Speed Skating Women's 1,000 metres&quot; ...
+##  $ Event  : chr  &quot;Basketball Men&#39;s Basketball&quot; &quot;Judo Men&#39;s Extra-Lightweight&quot; &quot;Speed Skating Women&#39;s 500 metres&quot; &quot;Speed Skating Women&#39;s 1,000 metres&quot; ...
 ##  $ Medal  : Factor w/ 4 levels &quot;Bronze&quot;,&quot;DNW&quot;,..: 2 2 2 2 2 2 2 2 2 2 ...
 ##  $ Country: Factor w/ 206 levels &quot;Afghanistan&quot;,..: 40 40 130 130 130 130 130 130 197 197 ...
 ##  $ notes  : Factor w/ 22 levels &quot;&quot;,&quot;Antigua and Barbuda&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...</code></pre>

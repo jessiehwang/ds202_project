@@ -107,8 +107,71 @@ theme(legend.position="right", axis.text.x=element_text(size=10, angle=90,vjust=
 labs(title="10 Most popular sports by sex", x="Sports", y="Num. Participants")
 ```
 
+## attending contries throughout the years
+```{R}
+# Subset to Games of interest and count athletes from each country
+year1 <- olympics %>% 
+  filter(Games == "1932 Summer") %>%
+  group_by(region) %>%
+  summarize(year1 = length(unique(ID)))
+year2 <- olympics %>% 
+  filter(Games == "1980 Summer") %>%
+  group_by(region) %>%
+  summarize(year2 = length(unique(ID)))
+year3 <- olympics %>% 
+  filter(Games == "2012 Summer") %>%
+  group_by(region) %>%
+  summarize(year3 = length(unique(ID)))
 
-##Weight,Height and Age
+# Create data for mapping
+world <- map_data("world")
+mapdat <- tibble(region=unique(world$region))
+mapdat <- mapdat %>% 
+  left_join(year1, by="region") %>%
+  left_join(year2, by="region") %>%
+  left_join(year3, by="region")
+mapdat[is.na(mapdat)]<-0
+world <- left_join(world, mapdat, by="region")
+
+# Plot: 1932 Summer
+ggplot(world, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = year1)) +
+  labs(title = "1932 Summer",
+       x = NULL, y=NULL) +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.5)) +
+  guides(fill=guide_colourbar(title="Athletes")) +
+  scale_fill_gradient(low="steelblue",high = "orange")
+
+# Plot: 1980 Summer
+ggplot(world, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = year2)) +
+  labs(title = "1980 Summer",
+       x = NULL, y = NULL) +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.5)) +
+  guides(fill=guide_colourbar(title="Athletes")) +
+  scale_fill_gradient(low="steelblue",high = "orange")
+
+# Plot:  2012 Summer
+ggplot(world, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = year3)) +
+  labs(title = "2012 Summer",
+       x = NULL, y = NULL) +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.5)) +
+  guides(fill=guide_colourbar(title="Athletes")) +
+  scale_fill_gradient(low="steelblue",high = "orange")
+
+```
+
+##Weight,Height
 ```{R}
 #There are no relationship between weight,Height,Age and win the medal
 height= olympics%>%filter(Season=='Summer')
@@ -116,7 +179,6 @@ height$Medal=ifelse(is.na(height$Medal),"DNW",ifelse(height$Medal=="Gold","Gold"
 
 ggplot(height,aes(x=Height))+
   geom_histogram(aes(group=Medal,colour=Medal),alpha=0.01,bins = 30)+
-  facet_wrap(~Sex)+
   scale_y_continuous(name =  "Density")+
   theme(panel.background=element_blank())+
   theme(axis.line = element_line(color = "orange",size=1))+
@@ -128,7 +190,6 @@ ggplot(height,aes(x=Height))+
 #Weight/medal
 ggplot(height,aes(x=Weight))+
   geom_histogram(aes(group=Medal,colour=Medal),alpha=0.01,bins = 30)+
-  facet_wrap(~Sex)+
   scale_y_continuous(name =  "Density")+
   theme(panel.background=element_blank())+
   theme(axis.line = element_line(color = "orange",size=1))+
@@ -137,18 +198,11 @@ ggplot(height,aes(x=Weight))+
         plot.title = element_text(size=12,face = "bold")) + 
   ggtitle("Weight of all Athletes and Medal winners", subtitle = "Summer Olympics 1896 to 2016")
 
-#age/medal
-ggplot(height,aes(x=Age))+
-  geom_histogram(aes(group=Medal,colour=Medal),alpha=0.01,bins = 30)+
-  facet_wrap(~Sex)+
-  scale_y_continuous(name =  "Density")+
-  theme(panel.background=element_blank())+
-  theme(axis.line = element_line(color = "orange",size=1))+
-  theme(legend.position = "bottom",
-        axis.text = element_text(size = 8,face = "bold"),
-        plot.title = element_text(size=12,face = "bold")) + 
-  ggtitle("age of all Athletes and Medal winners", subtitle = "Summer Olympics 1896 to 2016")
+
+
 ```
+
+
 
 ## Attendence of the country
 ```{R}
@@ -198,14 +252,90 @@ ggplot(am,aes(x=total,y=total1))+
   theme(panel.background=element_blank())+ 
   scale_x_discrete() +
   xlab("attendence")+ylab("Medals")+
-  ggtitle("Relationship between ...", subtitle= "Summer Olympics 1896 to 2016") 
+  ggtitle("Relationship between attendance and medal wins", subtitle= "Summer Olympics 1896 to 2016") 
 
 ```
 
-##sport
+## Sport
 ```{R}
 top=attend%>%filter(region %in% c("USA","Russia","Germany","Australia","UK"))
 
+top$sport<-as.character(top$Sport)
+top$region<-as.character(top$region)
+top <- subset(top, Medal == "Gold")
+top =top%>%group_by(region, Sport)%>%summarize(total1=n())%>%arrange(desc(total1))%>%head(n=30)
+ggplot(top, aes(Sport, total1),color=sport,fill=sport) + geom_bar(position = "stack",  width =.6,stat="identity") +
+  coord_flip() + scale_x_discrete() + facet_wrap(~region) + geom_text(aes(label=total1,hjust=-.03,  colour="black"),size=2) + theme(legend.position = "none",
+        axis.text = element_text(size = 6,face="bold"),
+        plot.title = element_text(size=16,face = "bold"))+labs(title="Best sports for top 5 Countries", x="Sports", y="Number of Gold Medals")
+
 ```
 
+## Prediction
+```{R}
+Gold <-olympics%>%
+  filter(Medal == "Gold")%>%
+  group_by(Year, Season, region) %>%
+  summarise(Gold = n())
+
+Silver <-olympics %>%
+  filter(Medal == "Silver")%>%
+  group_by(Year, Season, region) %>%
+  summarise(Silver = n())
+
+
+Bronze <-  olympics %>%
+  filter(Medal == "Bronze")%>%
+  group_by(Year, Season, region) %>%
+  summarise(Bronze = n())
+
+Total <-  olympics %>%
+  filter(Medal != "<NA>")%>%
+  group_by(Year, Season, region) %>%
+  summarise(Total = n())
+
+Total <- Total %>%
+  left_join(Gold) 
+## Joining, by = c("Year", "Season", "region")
+
+Total <- Total %>%
+  left_join(Silver) 
+## Joining, by = c("Year", "Season", "region")
+
+Total <- Total %>%
+  left_join(Bronze)
+## Joining, by = c("Year", "Season", "region")
+
+
+Total$Gold[is.na(Total$Gold)] <- 0
+Total$Silver[is.na(Total$Silver)] <- 0
+Total$Bronze[is.na(Total$Bronze)] <- 0
+Total$Total[is.na(Total$Total)] <- 0
+
+#average change rate
+p<-sort(summary(lm(Total~Year:region,data=Total[Total$Season=="Summer",]))$coefficients[,1])
+#Russia,USA,Germany,China,UK,Australia
+
+
+Total %>%filter(Season == "Summer")%>%
+  ggplot(aes(x = Year, y = Total, group = region)) +
+  geom_line(aes(color = region)) +
+  geom_point(aes(color = region)) +
+  theme(legend.position='none')
+
+Total %>%
+  filter(region %in% c("Russia","USA","Germany","China","UK","France")) %>%
+  filter(Season == "Summer")%>%
+  ggplot(aes(x = Year, y = Total, group = region)) +
+  geom_smooth(aes(color = region),method="gam",formula = y ~ s(x,k=4, bs = "cs"),fullrange=TRUE,se=F) +
+  geom_point(aes(color = region))
+
+Total %>%
+  filter(region %in% c("Russia","USA","Germany","China","UK","France")) %>%
+  filter(Season == "Summer")%>%
+  ggplot(aes(x = Year, y = Total, group = region)) +
+  geom_smooth(aes(color = region),method="gam",formula = y ~ s(x,k=4, bs = "cs"),fullrange=TRUE,se=F) +
+  geom_point(aes(color = region))+xlim(c(1890,2040))
+
+```
 
