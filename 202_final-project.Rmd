@@ -1,0 +1,333 @@
+---
+title: "ds202 final project"
+author: "Elcy Timothy, Hanying Shen, Sijie Huang, Yealim Sung, Yu Hong"
+date: "December 10, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading packages and dataset
+```{R}
+# Load packages
+library("plotly")
+library("tidyverse")
+library("data.table")
+library("gridExtra")
+library("knitr")
+library("directlabels")
+# Load athletes_events data 
+data <- read.csv(file="athlete_events.csv", header=TRUE, sep=",")
+noc <- read.csv(file="noc_regions.csv", header=TRUE)
+
+```
+
+
+## Data Cleaning
+```{R}
+#check NA 
+sum(is.na(data))
+sum(is.na(data$Height))
+sum(is.na(data$Weight))
+sum(is.na(data$Medal))
+sapply(data, class)
+sapply(noc,class)
+#change `ID`, `Name`, `Event`, `NOC` to character, `Height` to numeric, sex and game season in levels
+data$ID <- as.character(data$ID)
+data$Name <- as.character(data$Name)
+data$Event <- as.character(data$Event)
+data$NOC <- as.character(data$NOC)
+noc$NOC <- as.character(noc$NOC)
+
+data$Height <- as.numeric(data$Height)
+data$Weight <- as.numeric(data$Weight)
+data$Sex<-factor(data$Sex,levels=c("M","F"))
+data$Season<-factor(data$Season,levels = c("Summer","Winter"))
+#data$Medal<-factor(data$Medal,levels = c("Gold","Silver","Bronze"))
+
+#omit rows where either `Height`` or `Weight`` have missing values and save the new data
+data=data%>%drop_na("Height")
+data=data%>%drop_na("Weight")
+sum(is.na(data))
+
+# list the structure of data
+str(data)
+#Merge two datasets as "olympics", so we can use the NOC code as the primary key
+# This has to be a left join since we want all participating countries to remain in the data even if their NOC-Country is not found in the master. 
+olympics<-left_join(data, noc, by="NOC")%>%filter(!is.na(region))
+#replace `Team` with `Country` and remove the missing values because there are too many duplicates with small differences typos in the original `team` colunm
+olympics<-select(olympics, -c("Team"))
+```
+
+
+## Season
+```{R}
+#athletes in summer and winter olympics
+season=olympics%>%group_by(Season,Year,Sex)%>%summarize(total=n())
+ggplot(season, aes(x=Year, y=total,color=Sex))+
+  geom_line(size=1.5)+
+  facet_wrap(~Season)+
+  xlab("Year")+ylab("Athletes")+ggtitle("Male and Female Athletes",subtitle = "Olympics 1896 to 2016 ") 
+#Male has increased from 2500 to 7500 per summer game since 1896. Female athletes has steep increase 
+#in numbers  from 2000 in 1980 games to 6000 athletes in 2016 games.
+```
+
+## Sex
+```{R}
+#sex
+plot <-olympics%>% group_by(Year, Sex) %>% filter(Season=='Summer') %>% summarize(Count=n()) %>% group_by(Year)
+ggplot(plot, aes(x=Year, y=Count, group=Sex)) +
+  geom_col(aes(fill=Sex)) +
+  scale_x_continuous(breaks=plot$Year)+
+  theme(legend.position="top", legend.text=element_text(size=5),axis.text.x=element_text(size=8, angle=90,vjust=0,hjust=1))+
+  labs(title="Sex ratio over the time", x="Years", y="Num. Participants")
+
+Y <- olympics%>%filter(!is.na(Medal),Season=='Summer',Sex=="F")
+Y$notes = NULL
+Y2016 =Y%>%filter(Year==2016)%>%group_by(region,Medal)%>%summarize(total=n())%>%arrange(desc(total))%>%head(n=30)
+ggplot(Y2016,aes(region,total,fill=Medal)) +
+     geom_bar(position = "stack",  width =.6,stat="identity") +
+     coord_flip()+
+     
+     theme(axis.line = element_line(color = "orange",size=1))+
+     theme(panel.background=element_blank())+ 
+     scale_x_discrete() +
+     xlab("Team")+ylab("Medals")+
+     theme(legend.position = "bottom") + 
+     ggtitle("Top Team medal winners ", subtitle = "Summer Olympics 2016(Female)") 
+```
+
+## attending contries throughout the years
+```{R}
+# Subset to Games of interest and count athletes from each country
+year1 <- olympics %>% 
+  filter(Games == "1932 Summer") %>%
+  group_by(region) %>%
+  summarize(year1 = length(unique(ID)))
+year2 <- olympics %>% 
+  filter(Games == "1980 Summer") %>%
+  group_by(region) %>%
+  summarize(year2 = length(unique(ID)))
+year3 <- olympics %>% 
+  filter(Games == "2012 Summer") %>%
+  group_by(region) %>%
+  summarize(year3 = length(unique(ID)))
+
+# Create data for mapping
+world <- map_data("world")
+mapdat <- tibble(region=unique(world$region))
+mapdat <- mapdat %>% 
+  left_join(year1, by="region") %>%
+  left_join(year2, by="region") %>%
+  left_join(year3, by="region")
+mapdat[is.na(mapdat)]<-0
+world <- left_join(world, mapdat, by="region")
+
+# Plot: 1932 Summer
+ggplot(world, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = year1)) +
+  labs(title = "1932 Summer",
+       x = NULL, y=NULL) +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.5)) +
+  guides(fill=guide_colourbar(title="Athletes")) +
+  scale_fill_gradient(low="steelblue",high = "orange")
+
+# Plot: 1980 Summer
+ggplot(world, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = year2)) +
+  labs(title = "1980 Summer",
+       x = NULL, y = NULL) +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.5)) +
+  guides(fill=guide_colourbar(title="Athletes")) +
+  scale_fill_gradient(low="steelblue",high = "orange")
+
+# Plot:  2012 Summer
+ggplot(world, aes(x = long, y = lat, group = group)) +
+  geom_polygon(aes(fill = year3)) +
+  labs(title = "2012 Summer",
+       x = NULL, y = NULL) +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.title = element_text(hjust = 0.5)) +
+  guides(fill=guide_colourbar(title="Athletes")) +
+  scale_fill_gradient(low="steelblue",high = "orange")
+
+```
+
+##Weight,Height
+```{R}
+#There are no relationship between weight,Height,Age and win the medal
+height= olympics%>%filter(Season=='Summer')
+height$Medal=ifelse(is.na(height$Medal),"DNW",ifelse(height$Medal=="Gold","Gold",ifelse(height$Medal=="Silver","Silver","Bronze")))
+
+ggplot(height,aes(x=Height))+
+  geom_histogram(aes(group=Medal,colour=Medal),alpha=0.01,bins = 30)+
+  scale_y_continuous(name =  "Density")+
+  theme(panel.background=element_blank())+
+  theme(axis.line = element_line(color = "orange",size=1))+
+  theme(legend.position = "bottom",
+        axis.text = element_text(size = 8,face = "bold"),
+        plot.title = element_text(size=12,face = "bold")) + 
+  ggtitle("Height of all Athletes and Medal winners", subtitle = "Summer Olympics 1896 to 2016")
+
+#Weight/medal
+ggplot(height,aes(x=Weight))+
+  geom_histogram(aes(group=Medal,colour=Medal),alpha=0.01,bins = 30)+
+  scale_y_continuous(name =  "Density")+
+  theme(panel.background=element_blank())+
+  theme(axis.line = element_line(color = "orange",size=1))+
+  theme(legend.position = "bottom",
+        axis.text = element_text(size = 8,face = "bold"),
+        plot.title = element_text(size=12,face = "bold")) + 
+  ggtitle("Weight of all Athletes and Medal winners", subtitle = "Summer Olympics 1896 to 2016")
+
+
+
+```
+
+
+
+## Attendence of the country
+```{R}
+#the number of the attendence by countries
+attend=olympics%>%filter(Season=='Summer')
+attend$notes = NULL
+attend1 =attend%>%group_by(region)%>%summarize(total=n())%>%arrange(desc(total))%>%head(n=30)
+attend1$region <- factor(attend1$region,levels = attend1$region[order(attend1$total)])
+ggplot(attend1,aes(region,total,color=region,fill=region)) +
+  geom_bar(position = "stack",  width =.6,stat="identity") +
+  coord_flip()+
+  geom_text(aes(label=total,hjust=-.03,  colour="black"),size=3)+
+  theme(panel.background=element_blank())+ 
+  scale_x_discrete() +
+  xlab("Country")+ylab("Medals")+
+  theme(legend.position = "none",
+        axis.text = element_text(size = 8,face="bold"),
+        plot.title = element_text(size=16,face = "bold")) + 
+  ggtitle("Top attendance by Country", subtitle= "Summer Olympics 1896 to 2016") 
+
+# the count of the medal by countries
+medals=attend%>%filter(!is.na(Medal))
+medals$notes = NULL
+medals =medals%>%group_by(region)%>%summarize(total1=n())%>%arrange(desc(total1))%>%head(n=30)
+medals$region <- factor(medals$region,levels = medals$region[order(medals$total1)])
+
+ggplot(medals,aes(region,total1,color=region,fill=region)) +
+  geom_bar(position = "stack",  width =.6,stat="identity") +
+  coord_flip()+
+  geom_text(aes(label=total1,hjust=-.03,  colour="black"),size=3)+
+  theme(panel.background=element_blank())+ 
+  scale_x_discrete() +
+  xlab("Country")+ylab("Medals")+
+  theme(legend.position = "none",
+        axis.text = element_text(size = 8,face="bold"),
+        plot.title = element_text(size=16,face = "bold")) + 
+  ggtitle("Top medal winners by Country", subtitle= "Summer Olympics 1896 to 2016") 
+
+# relationship between attendence and medal win
+#relationship between
+medals$region<-as.character(medals$region)
+attend1$region<-as.character(attend1$region)
+am<-left_join(attend1, medals, by="region")
+ggplot(am,aes(x=total,y=total1))+
+  geom_point(size=2)+
+  geom_smooth(method='lm',formula=y~x)+
+  theme(panel.background=element_blank())+ 
+  scale_x_discrete() +
+  xlab("attendence")+ylab("Medals")+
+  ggtitle("Relationship between attendance and medal wins", subtitle= "Summer Olympics 1896 to 2016") 
+
+```
+
+## Sport
+```{R}
+top=attend%>%filter(region %in% c("USA","Russia","Germany","Australia","UK"))
+
+top$sport<-as.character(top$Sport)
+top$region<-as.character(top$region)
+top <- subset(top, Medal == "Gold")
+top =top%>%group_by(region, Sport)%>%summarize(total1=n())%>%arrange(desc(total1))%>%head(n=30)
+ggplot(top, aes(Sport, total1),color=sport,fill=sport) + geom_bar(position = "stack",  width =.6,stat="identity") +
+  coord_flip() + scale_x_discrete() + facet_wrap(~region) + geom_text(aes(label=total1,hjust=-.03,  colour="black"),size=2) + theme(legend.position = "none",
+        axis.text = element_text(size = 6,face="bold"),
+        plot.title = element_text(size=16,face = "bold"))+labs(title="Best sports for top 5 Countries", x="Sports", y="Number of Gold Medals")
+
+```
+
+## Prediction
+```{R}
+Gold <-olympics%>%
+  filter(Medal == "Gold")%>%
+  group_by(Year, Season, region) %>%
+  summarise(Gold = n())
+
+Silver <-olympics %>%
+  filter(Medal == "Silver")%>%
+  group_by(Year, Season, region) %>%
+  summarise(Silver = n())
+
+
+Bronze <-  olympics %>%
+  filter(Medal == "Bronze")%>%
+  group_by(Year, Season, region) %>%
+  summarise(Bronze = n())
+
+Total <-  olympics %>%
+  filter(Medal != "<NA>")%>%
+  group_by(Year, Season, region) %>%
+  summarise(Total = n())
+
+Total <- Total %>%
+  left_join(Gold) 
+## Joining, by = c("Year", "Season", "region")
+
+Total <- Total %>%
+  left_join(Silver) 
+## Joining, by = c("Year", "Season", "region")
+
+Total <- Total %>%
+  left_join(Bronze)
+## Joining, by = c("Year", "Season", "region")
+
+
+Total$Gold[is.na(Total$Gold)] <- 0
+Total$Silver[is.na(Total$Silver)] <- 0
+Total$Bronze[is.na(Total$Bronze)] <- 0
+Total$Total[is.na(Total$Total)] <- 0
+
+#average change rate
+p<-sort(summary(lm(Total~Year:region,data=Total[Total$Season=="Summer",]))$coefficients[,1])
+#Russia,USA,Germany,China,UK,Australia
+
+
+Total %>%filter(Season == "Summer")%>%
+  ggplot(aes(x = Year, y = Total, group = region)) +
+  geom_line(aes(color = region)) +
+  geom_point(aes(color = region)) +
+  theme(legend.position='none')
+
+Total %>%
+  filter(region %in% c("Russia","USA","Germany","China","UK","France")) %>%
+  filter(Season == "Summer")%>%
+  ggplot(aes(x = Year, y = Total, group = region)) +
+  geom_smooth(aes(color = region),method="gam",formula = y ~ s(x,k=4, bs = "cs"),fullrange=TRUE,se=F) +
+  geom_point(aes(color = region))
+
+Total %>%
+  filter(region %in% c("Russia","USA","Germany","China","UK","France")) %>%
+  filter(Season == "Summer")%>%
+  ggplot(aes(x = Year, y = Total, group = region)) +
+  geom_smooth(aes(color = region),method="gam",formula = y ~ s(x,k=4, bs = "cs"),fullrange=TRUE,se=F) +
+  geom_point(aes(color = region))+xlim(c(1890,2040))
+
+```
+
